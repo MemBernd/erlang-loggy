@@ -2,7 +2,7 @@
 -export([start/5, stop/1, peers/2]).
 
 start(Name, Logger, Seed, Sleep, Jitter) ->
-    spawn_link(fun() -> int(Name, Logger, Seed, Sleep, Jitter) end).
+    spawn_link(fun() -> init(Name, Logger, Seed, Sleep, Jitter) end).
 
 stop(Worker) ->
     Worker ! stop.
@@ -33,14 +33,14 @@ loop(Name, Log, Peers, Sleep, Jitter) ->
             Selected = select(Peers),
             Time = na,
             Message = {hello, random:uniform(100)},
-            Selected  {msg, Time, Message},
+            Selected ! {msg, Time, Message},
             jitter(Jitter),
             Log ! {log, Name, Time, {sending, Message}},
             loop(Name, Log, Peers, Sleep, Jitter)
     end.
 
 select(Peers) ->
-    list:nth(random:uniform(length(Peers)), Peers).
+    lists:nth(random:uniform(length(Peers)), Peers).
 
-jittter(0) -> ok;
+jitter(0) -> ok;
 jitter(Jitter) -> timer:sleep(random:uniform(Jitter)).

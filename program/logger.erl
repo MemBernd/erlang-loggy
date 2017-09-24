@@ -10,7 +10,7 @@ stop(Logger) ->
 init(_) ->
     loop().
 
-loog()  ->
+loop()  ->
     receive
         {log, From, Time, Msg} ->
             log(From, Time, Msg),
