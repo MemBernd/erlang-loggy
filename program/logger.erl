@@ -7,17 +7,41 @@ start(Nodes) ->
 stop(Logger) ->
     Logger ! stop.
 
-init(_) ->
-    loop().
+init(Nodes) ->
+    loop(time:clock(Nodes), []).
 
-loop()  ->
+loop(Clock, Queue)  ->
     receive
         {log, From, Time, Msg} ->
-            log(From, Time, Msg),
-            loop();
+            {NewClock, NewQueue} = log(From, Time, Msg, Clock, Queue),
+            loop(NewClock, NewQueue);
         stop ->
+            io:format("Emptying Queue...~n"),
+            lists:foreach(fun({Time, From, Message}) ->
+                    io:format("log: ~w ~w ~p~n", [Time, From, Message])
+                end,
+                lists:keysort(1, Queue)),
             ok
     end.
 
-log(From, Time, Msg) ->
-    io:format("log: ~w ~w ~p~n", [Time, From, Msg]).
+log(From, Time, Msg, Clock, Queue) ->
+    %io:format("log: ~w ~w ~p~n", [Time, From, Msg]),
+    NewClock = time:update(From, Time, Clock),
+    %io:format("clock ~p~n", [NewClock]),
+    NewQueue = lists:keysort(1 ,[{Time, From, Msg} | Queue]),
+    %io:format("~nstarting log with: ~p~n", [NewQueue]),
+    EndQueue = lists:foldl(fun(Elem, TempQueue) -> processQueue(Elem, NewClock, TempQueue) end, [], NewQueue),
+    {NewClock, EndQueue}.
+
+processQueue({Time, From, Message}, Clock, Queue) ->
+    %io:format("checking: ~nTime: ~w~nFrom: ~w~nMessage: ~w~n", [Time, From, Message]),
+    %if Queue == [] ->
+    %        io:format("Found messages which can be printed.~n")
+    %end,
+    case time:safe(Time, Clock) of
+        true ->
+            io:format("log: ~w ~w ~p~n", [Time, From, Message]),
+            Queue;
+        false ->
+            [{Time, From, Message} | Queue]
+    end.
