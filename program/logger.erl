@@ -26,10 +26,10 @@ loop(Clock, Queue)  ->
 
 log(From, Time, Msg, Clock, Queue) ->
     %io:format("log: ~w ~w ~p~n", [Time, From, Msg]),
-    NewClock = time:update(From, Time, Clock),
+    NewClock = vect:update(From, Time, Clock),
     %io:format("clock ~p~n", [NewClock]),
-    NewQueue = lists:keysort(1 ,[{Time, From, Msg} | Queue]),
-    %io:format("~nstarting log with: ~p~n", [NewQueue]),
+    NewQueue = [{Time, From, Msg} | Queue],
+    io:format("~nLooking up Queue With clock: ~p~n", [NewClock]),
     EndQueue = lists:foldl(fun(Elem, TempQueue) -> processQueue(Elem, NewClock, TempQueue) end, [], NewQueue),
     {NewClock, EndQueue}.
 
@@ -38,7 +38,7 @@ processQueue({Time, From, Message}, Clock, Queue) ->
     %if Queue == [] ->
     %        io:format("Found messages which can be printed.~n")
     %end,
-    case time:safe(Time, Clock) of
+    case vect:safe(Time, Clock) of
         true ->
             io:format("log: ~w ~w ~p~n", [Time, From, Message]),
             Queue;

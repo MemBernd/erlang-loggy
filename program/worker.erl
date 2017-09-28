@@ -11,7 +11,7 @@ init(Name, Log, Seed, Sleep, Jitter) ->
     random:seed(Seed, Seed, Seed),
     receive
         {peers, Peers} ->
-            loop(Name, Log, Peers, Sleep, Jitter, 0);
+            loop(Name, Log, Peers, Sleep, Jitter, vect:zero());
         stop ->
             ok
     end.
@@ -23,7 +23,7 @@ loop(Name, Log, Peers, Sleep, Jitter, TimeSelf) ->
     Wait = random:uniform(Sleep),
     receive
         {msg, TimeReceived, Msg} ->
-            NewTime = time:newTime(TimeSelf, TimeReceived),
+            NewTime = vect:newTime(Name, TimeSelf, TimeReceived),
             Log ! {log, Name, NewTime, {received,Msg}},
             loop(Name, Log, Peers, Sleep, Jitter, NewTime);
         stop ->
@@ -32,7 +32,7 @@ loop(Name, Log, Peers, Sleep, Jitter, TimeSelf) ->
             Log ! {log, Name, TimeSelf, {Error, Error}}
         after Wait ->
             Selected = select(Peers),
-            NewTime = time:inc(Name, TimeSelf),
+            NewTime = vect:inc(Name, TimeSelf),
             Message = {hello, random:uniform(100)},
             Selected ! {msg, NewTime, Message},
             jitter(Jitter),
